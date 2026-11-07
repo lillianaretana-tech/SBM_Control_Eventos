@@ -292,7 +292,7 @@ function view(v){
  ['register','leader','agenda'].forEach(k=>{$(k).classList.toggle('hidden',k!==v);$('tab-'+k).classList.toggle('active',k===v)});
  if(v==='leader')renderLeader();if(v==='agenda')renderAgenda();window.scrollTo({top:0,behavior:'smooth'});
 }
-function estado(e){return e.estado||e.paso_cierre_en?'Finalizado':(e.paso_preparado_en||e.paso_atendido_en)?'En proceso':'Pendiente'}
+function estado(e){if(e.estado)return e.estado;return e.paso_cierre_en?'Finalizado':(e.paso_preparado_en||e.paso_atendido_en)?'En proceso':'Pendiente'}
 function canDelete(e){if(CLIENTE)return !!e.cancelable;return canWork()||(state.perfil.rol==='cliente'&&e.creado_por===state.user.id&&!e.paso_preparado_en)}
 function eventCard(e,leader){
  const est=estado(e),cls=est==='Finalizado'?'ok':est==='Pendiente'?'warn':'';
