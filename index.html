@@ -1,37 +1,361 @@
 <!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>SBM | Gestor de eventos</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{font-family:system-ui,Arial,sans-serif;color:#18314d;background:#f2f6fa}*{box-sizing:border-box}body{margin:0}
+header{background:#153452;color:#fff;padding:12px 18px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+header b{font-size:21px}.hright{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.hright select{width:auto;padding:8px 10px}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;border:0;border-radius:12px;padding:13px 16px;font-weight:700}
+button.primary{background:#1467b3;color:#fff}button.secondary{background:#e7f0fa;color:#174d7e}button.danger{background:#fde8e8;color:#9b1c1c}
+button:disabled{opacity:.5;cursor:not-allowed}
+.wrap{max-width:1050px;margin:20px auto;padding:0 14px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.tabs button{background:#fff;color:#173a5b;border:1px solid #cbd9e5}.tabs button.active{background:#1467b3;color:#fff}
+.panel{background:#fff;border-radius:18px;padding:22px;box-shadow:0 3px 16px #1d395015;margin-bottom:16px}
+h1{font-size:25px;margin:0 0 6px}h2{font-size:20px;margin:18px 0 10px}p{line-height:1.45}.muted{color:#5c6d7b;font-size:14px}
+label{display:block;font-weight:700;margin:12px 0 5px}
+input,select,textarea{width:100%;padding:12px;border:1px solid #b8c9d8;border-radius:10px;background:#fff;color:#18314d}textarea{min-height:75px}
+.cols{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.choices{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}
+.layouts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.choice{border:2px solid #d7e2ec;border-radius:13px;background:#fff;color:#173a5b;min-height:70px;padding:10px;text-align:center}
+.choice.selected{border-color:#1269b8;background:#e7f3ff}
+.choice svg{display:block;margin:0 auto 4px;max-width:130px;width:100%;height:75px}.choice strong{display:block}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}
+.event{border:1px solid #d8e4ed;border-radius:13px;padding:14px;margin:10px 0}.event h3{margin:0 0 5px}
+.pill{display:inline-block;background:#e9f2fb;border-radius:30px;padding:5px 10px;font-size:12px;font-weight:700;margin:3px 4px 3px 0}
+.pill.ok{background:#d9f5e4;color:#166039}.pill.warn{background:#fff0c9;color:#7a5200}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.steps button{padding:16px 6px;background:#edf2f7;color:#28445c}.steps button.done{background:#d9f5e4;color:#166039}.steps small{display:block;font-weight:400}
+.hidden{display:none!important}.empty{padding:28px;text-align:center;background:#f7fafc;border-radius:12px}
+.notice{border-radius:10px;padding:10px;margin:12px 0;font-size:14px;background:#fff5d9}.notice.err{background:#fde8e8;color:#8a1c1c}.notice.ok{background:#d9f5e4;color:#166039}
+.small{font-size:13px}footer{text-align:center;color:#6a7c8b;padding:20px}
+.login{max-width:400px;margin:40px auto}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}.bar select{width:auto}
+details.step{border:1px solid #d7e2ee;border-radius:14px;margin:10px 0;background:#fff;overflow:hidden}
+details.step>summary{padding:17px 16px;background:#f0f5fb;color:#173a5b;font-weight:800;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.step>summary::-webkit-details-marker{display:none}details.step>summary:after{content:"＋";font-size:22px}details.step[open]>summary:after{content:"−"}
+details.step> :not(summary){margin-left:14px;margin-right:14px}details.step>.cols{margin-top:15px}details.step>label:first-of-type{margin-top:14px}
+details.step>*:last-child{margin-bottom:14px}
+@media(max-width:650px){.cols{grid-template-columns:1fr}.layouts{grid-template-columns:repeat(2,1fr)}.choices{grid-template-columns:repeat(2,1fr)}.panel{padding:15px}.steps{grid-template-columns:1fr}header b{font-size:17px}}
+</style></head>
+<body>
+<header><b>📅 SBM | Eventos</b>
+ <div class="hright hidden" id="userbar"><span class="small" id="whoami"></span><select id="siteSel" aria-label="Site"></select><button class="secondary" id="logoutBtn" data-act="logout" style="padding:8px 12px">Salir</button></div>
+</header>
 
-<html lang="es"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/><title>SBM | Gestor de eventos — Demo</title><style>:root{font-family:system-ui,Arial,sans-serif;color:#18314d;background:#f2f6fa}*{box-sizing:border-box}body{margin:0}header{background:#153452;color:white;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:10px}header b{font-size:22px}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:12px;padding:13px 16px;font-weight:700}button.primary{background:#1467b3;color:white}button.secondary{background:#e7f0fa;color:#174d7e}button:disabled{opacity:.5}.wrap{max-width:1050px;margin:20px auto;padding:0 14px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.tabs button.active{background:#1467b3;color:white}.tabs button{background:white;color:#173a5b;border:1px solid #cbd9e5}.panel{background:white;border-radius:18px;padding:22px;box-shadow:0 3px 16px #1d395015;margin-bottom:16px}h1{font-size:25px;margin:0 0 6px}h2{font-size:20px;margin:0 0 14px}p{line-height:1.45}.muted{color:#5c6d7b;font-size:14px}label{display:block;font-weight:700;margin:12px 0 5px}input,select,textarea{width:100%;padding:12px;border:1px solid #b8c9d8;border-radius:10px;background:white;color:#18314d}textarea{min-height:75px}.cols{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.layouts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.choice{border:2px solid #d7e2ec;border-radius:13px;background:#fff;color:#173a5b;min-height:88px;padding:10px;text-align:center}.choice.selected{border-color:#1269b8;background:#e7f3ff}.choice svg{display:block;margin:0 auto 4px;max-width:130px;width:100%;height:75px}.choice strong{display:block}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}.event{border:1px solid #d8e4ed;border-radius:13px;padding:14px;margin:10px 0}.event h3{margin:0 0 5px}.pill{display:inline-block;background:#e9f2fb;border-radius:30px;padding:5px 10px;font-size:12px;font-weight:700;margin:3px 4px 3px 0}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.steps button{padding:16px 6px;background:#edf2f7;color:#28445c}.steps button.done{background:#d9f5e4;color:#166039}.hidden{display:none!important}.empty{padding:28px;text-align:center;background:#f7fafc;border-radius:12px}.notice{background:#fff5d9;border-radius:10px;padding:10px;margin:12px 0;font-size:13px}.small{font-size:13px}footer{text-align:center;color:#6a7c8b;padding:20px} @media(max-width:650px){.cols{grid-template-columns:1fr}.layouts{grid-template-columns:repeat(2,1fr)}.panel{padding:15px}.steps{grid-template-columns:1fr}header b{font-size:18px}}</style><style>details.step{border:1px solid #d7e2ee;border-radius:14px;margin:10px 0;background:#fff;overflow:hidden}details.step>summary{padding:17px 16px;background:#f0f5fb;color:#173a5b;font-weight:800;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}details.step>summary::-webkit-details-marker{display:none}details.step>summary:after{content:"＋";font-size:22px}details.step[open]>summary:after{content:"−"}details.step> :not(summary){margin-left:14px;margin-right:14px}details.step>.cols{margin-top:15px}details.step>label{margin-top:14px}details.step>p:last-child{margin-bottom:14px}details.step .layouts{margin-bottom:14px}details.step .choices{margin-bottom:10px}</style></head><body><header><b>📅 SBM | Eventos</b><span class="small">PROTOTIPO · sin conexión</span></header><main class="wrap"><div class="panel"><label for="demoProject">Simular acceso de cliente (solo para probar)</label><select id="demoProject" onchange="changeDemoProject()"><option>Uber COE</option><option>Uber Bambú</option><option>Uber Cedral</option><option>McKinsey</option><option>Emerson</option></select><p class="muted">En la versión real, el cliente entrará directamente a su empresa, sin elegir proyecto. Este selector es solo para probar diferentes clientes; no es un control de seguridad.</p></div><div class="tabs"><button class="active" id="tab-register" onclick="view('register')">➕ Registrar evento</button><button id="tab-leader" onclick="view('leader')">👷 ¿Qué hago hoy?</button><button id="tab-agenda" onclick="view('agenda')">📋 Agenda</button></div><section class="panel" id="register"><h1>Nuevo evento</h1><p class="muted">Solo lo necesario. Elige el dibujo y listo.</p><details class="step" open=""><summary>1 · Datos del evento</summary><div class="cols"><div><label>Nombre del evento</label><input id="name" placeholder="Ej. Reunión de equipo"/></div><div><label>Fecha</label><input id="date" type="date"/></div><div><label>Hora de inicio</label><input id="start" type="time" value="09:00"/></div><div><label>Hora de finalización</label><input id="end" type="time" value="11:00"/></div><div><label>Personas asistentes</label><input id="people" min="1" placeholder="Ej. 20" type="number"/></div></div></details><details class="step"><summary>2 · Lugar</summary><label>¿Dónde será?</label><label for="floor">¿En qué piso?</label><select id="floor" onchange="updateRoomLabel()"></select><p class="muted" id="floorHelp"></p><div class="choices" id="spaces"></div><div id="roomBlock"><select id="knownRoom" onchange="chooseRoom()" style="margin-top:8px"></select><label for="room" id="customRoomLabel">Nombre específico (si hace falta)</label><label for="room" id="roomLabel">¿Cómo se llama la sala?</label><input autocomplete="off" id="room" placeholder="Ej. Sala 3"/><p class="muted" id="roomHelp">Escribe el nombre o número exacto para que el equipo sepa dónde preparar el evento.</p></div></details><details class="step"><summary>3 · Acomodo</summary><label>¿Cómo lo acomodamos?</label><div class="layouts" id="layouts"></div></details><details class="step"><summary>4 · Indicaciones y foto (opcional)</summary><label>¿Qué más se necesita? (opcional)</label><textarea id="notes" placeholder="Ej. Mesas auxiliares, proveedor, atención durante el evento..."></textarea><label>Foto de instrucciones (opcional)</label><input accept="image/*" id="photo" type="file"/><p class="muted">La imagen se muestra en esta sesión de prueba. No se envía a ningún servidor.</p></details><div class="actions"><button class="primary" onclick="saveEvent()">✓ Registrar evento</button><button class="secondary" onclick="resetForm()">Limpiar</button></div><p id="message" role="status"></p></section><section class="panel hidden" id="leader"><h1>¿Qué tengo que hacer?</h1><p class="muted">Abre un evento, mira el dibujo y marca cada etapa cuando esté terminada.</p><div id="leaderList"></div></section><section class="panel hidden" id="agenda"><h1>Agenda de eventos</h1><p class="muted">Eventos de esta demostración. Puedes eliminarlos sin afectar ningún sistema real.</p><div id="agendaList"></div><button class="secondary" onclick="clearDemo()">Borrar eventos de prueba</button></section><div class="notice">🔒 DEMOSTRACIÓN LOCAL: cambiar de cliente solo filtra la pantalla; NO es aislamiento seguro. Antes de compartir con clientes reales, se necesita autenticación y permisos de base de datos por proyecto. No ingresar datos confidenciales.</div></main><footer>SBM · Diseño piloto de gestión operativa de eventos</footer><script>
-const $=id=>document.getElementById(id);let space='Sala',layout='En U';const spaces=['Sala','Auditorio','Comedor','Pantry','Cafetín','Cafetería','Azotea / Rooftop','Otro espacio'];const names=['En U','Escuelita','Auditorio','Círculo','Rectángulo / Imperial','Mesas redondas','Stands','Gamer','Sin cambios','Otro'];const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function drawing(type){let shapes='';const rect=(x,y,w,h,fill='#b9cddd')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="${fill}"/>`;const chair=(x,y)=>rect(x,y,9,7,'#336e9c');if(type==='En U'){shapes+=rect(18,12,10,49)+rect(72,12,10,49)+rect(18,52,64,9);for(let i=0;i<4;i++){shapes+=chair(5,16+i*12)+chair(86,16+i*12)}for(let i=0;i<5;i++)shapes+=chair(24+i*11,64)}else if(type==='Escuelita'||type==='Auditorio'){for(let r=0;r<4;r++)for(let c=0;c<5;c++){if(type==='Escuelita'&&r%2===0)shapes+=rect(9+c*17,8+r*16,13,6);shapes+=chair(11+c*17,16+r*15)}}else if(type==='Círculo'||type==='Mesas redondas'){let n=type==='Círculo'?10:3;for(let k=0;k<n;k++){let a=2*Math.PI*k/n;shapes+=`<circle cx="${50+31*Math.cos(a)}" cy="${36+26*Math.sin(a)}" r="${type==='Círculo'?5:10}" fill="${type==='Círculo'?'#336e9c':'#b9cddd'}"/>`}}else if(type==='Rectángulo / Imperial'){shapes+=rect(22,20,56,32);for(let i=0;i<5;i++)shapes+=chair(24+i*11,10)+chair(24+i*11,55);shapes+=chair(9,31)+chair(82,31)}else if(type==='Stands'){for(let i=0;i<3;i++)shapes+=rect(10+i*30,10,22,15)+rect(10+i*30,48,22,15)}else if(type==='Gamer'){shapes+=rect(10,8,80,56);shapes+=`<circle cx="50" cy="36" r="12" fill="#336e9c"/>`;for(let i=0;i<3;i++)shapes+=chair(1,14+i*18)+chair(90,14+i*18)}else if(type==='Sin cambios'){shapes+=`<text x="50" y="43" font-size="33" text-anchor="middle" fill="#336e9c">✓</text>`}else{shapes+=`<text x="50" y="45" font-size="32" text-anchor="middle" fill="#336e9c">✎</text>`}return `<svg viewBox="0 0 100 78" role="img" aria-label="Esquema ${esc(type)}"><rect x="1" y="1" width="98" height="76" rx="8" fill="#f0f5fa"/>${shapes}</svg>`}
-function drawChoices(){ $('spaces').innerHTML=spaces.map(s=>`<button type="button" class="choice ${s===space?'selected':''}" onclick="pickSpace('${s}')">${s==='Sala'?'🪑':s==='Auditorio'?'🎤':s==='Comedor'?'🍽️':s==='Pantry'?'☕':'📍'}<strong>${s}</strong></button>`).join('');$('layouts').innerHTML=names.map((n,i)=>`<button type="button" class="choice ${n===layout?'selected':''}" onclick="pickLayout(${i})">${drawing(n)}<strong>${n}</strong></button>`).join('')};function pickSpace(s){space=s;drawChoices();updateRoomLabel()}const floors={"McKinsey":[1,2,3,4,5,6,7,8],"Emerson":[1,2,3,4],"Uber COE":[1,2,3],"Uber Bambú":[],"Uber Cedral":[]};
-function changeDemoProject(){resetForm();renderLeader();renderAgenda()}
-function getRoomName(){return $('room').value.trim()||($('knownRoom').value==='__custom'?'':$('knownRoom').value)}
-function chooseRoom(){const v=$('knownRoom').value;$('room').value=v==='__custom'?'':v;$('room').focus()}
-function updateRoomLabel(){
- const p=$('demoProject').value, f=$('floor'), old=f.value;
- const all=floors[p]||[];
- const confirmed={
-  'McKinsey':{'Pantry':[1,3,4,5,6,7],'Cafetería':[7],'Azotea / Rooftop':[8]},
-  'Emerson':{'Cafetín':[2,3,4],'Cafetería':[1]},
-  'Uber COE':{'Cafetín':[2],'Cafetería':[3]},
-  'Uber Bambú':{},'Uber Cedral':{}
- };
- const relevant=confirmed[p]?.[space];
- const fs=relevant||all;
- f.innerHTML='<option value="">Seleccionar piso</option>'+fs.map(x=>`<option value="${x}">Piso ${x}</option>`).join('')+'<option value="otro">Otro / por confirmar</option>';
- f.value=fs.map(String).includes(old)?old:'';
- const help={
-  'McKinsey':'Pantry: pisos 1, 3, 4, 5, 6 y 7. Cafetería: piso 7. Azotea / Rooftop: piso 8. Auditorio: piso por confirmar.',
-  'Emerson':'Cafetería principal: piso 1. Cafetines: pisos 2, 3 y 4.',
-  'Uber COE':'Cafetería principal: piso 3. Cafetín o cafetería pequeña: piso 2. Confirmar edificio.',
-  'Uber Bambú':'Espacios específicos pendientes de confirmar para este edificio.',
-  'Uber Cedral':'Espacios específicos pendientes de confirmar para este edificio.'
- };
- $('floorHelp').textContent=help[p]||'Selecciona el piso correspondiente.';
- let label={Sala:'Nombre de la sala',Auditorio:'Nombre del auditorio',Comedor:'Nombre del comedor',Pantry:'Nombre del pantry',Cafetín:'Nombre del cafetín',Cafetería:'Nombre de la cafetería','Azotea / Rooftop':'Nombre del área en la azotea','Otro espacio':'Nombre del lugar'}[space];
- $('roomLabel').textContent=label;$('room').placeholder='Ej. '+label+' 1';$('customRoomLabel').textContent='Nombre o número específico';
- const k=$('knownRoom');k.innerHTML='<option value="__custom">Escribir nombre / número</option>'+(space==='Pantry'||space==='Cafetín'||space==='Cafetería'?`<option value="${space} del piso">${space} del piso</option>`:'');
+<main class="wrap">
+ <!-- LOGIN -->
+ <section class="panel login" id="login">
+  <h1>Ingresar</h1><p class="muted">Usa el correo y la contraseña que te dio administración.</p>
+  <form id="loginForm">
+   <label for="email">Correo</label><input id="email" type="email" autocomplete="username" required/>
+   <label for="pass">Contraseña</label><input id="pass" type="password" autocomplete="current-password" required/>
+   <div class="actions"><button class="primary" id="loginBtn" type="submit">Entrar</button></div>
+  </form>
+  <div id="loginMsg" role="alert"></div>
+ </section>
+
+ <!-- APP -->
+ <div id="app" class="hidden">
+  <div class="tabs">
+   <button id="tab-register" data-act="view" data-v="register">➕ Registrar evento</button>
+   <button id="tab-leader" data-act="view" data-v="leader">👷 ¿Qué hago hoy?</button>
+   <button id="tab-agenda" data-act="view" data-v="agenda">📋 Agenda</button>
+  </div>
+
+  <section class="panel" id="register">
+   <h1>Nuevo evento</h1><p class="muted">Solo lo necesario. Elige el dibujo y listo. Site: <strong id="siteName"></strong></p>
+   <details class="step" open><summary>1 · Datos del evento</summary>
+    <div class="cols">
+     <div><label for="name">Nombre del evento</label><input id="name" maxlength="120" placeholder="Ej. Reunión de equipo"/></div>
+     <div><label for="date">Fecha</label><input id="date" type="date"/></div>
+     <div><label for="start">Hora de inicio</label><input id="start" type="time" value="09:00"/></div>
+     <div><label for="end">Hora de finalización</label><input id="end" type="time" value="11:00"/></div>
+     <div><label for="people">Personas asistentes</label><input id="people" min="1" max="5000" placeholder="Ej. 20" type="number" inputmode="numeric"/></div>
+     <div id="reqWrap" class="hidden"><label for="requester">Tu nombre y contacto</label><input id="requester" maxlength="120" placeholder="Ej. Ana Pérez · 8888-8888"/></div>
+    </div>
+   </details>
+   <details class="step"><summary>2 · Lugar</summary>
+    <label>¿Qué tipo de espacio?</label><div class="choices" id="spaces"></div>
+    <label for="floor">¿En qué piso?</label><select id="floor"></select><p class="muted" id="floorHelp"></p>
+    <label for="room" id="roomLabel">Nombre de la sala</label>
+    <input autocomplete="off" id="room" list="salasList" maxlength="80" placeholder="Ej. Sala 3"/>
+    <datalist id="salasList"></datalist>
+    <p class="muted">Escribe el nombre o número exacto para que el equipo sepa dónde preparar el evento.</p>
+   </details>
+   <details class="step"><summary>3 · Acomodo</summary><label>¿Cómo lo acomodamos?</label><div class="layouts" id="layouts"></div></details>
+   <details class="step"><summary>4 · Indicaciones y foto (opcional)</summary>
+    <label for="notes">¿Qué más se necesita?</label><textarea id="notes" maxlength="1000" placeholder="Ej. Mesas auxiliares, proveedor, atención durante el evento..."></textarea>
+    <div id="photoWrap"><label for="photo">Foto de instrucciones</label><input accept="image/*" id="photo" type="file"/>
+    <p class="muted">La foto se reduce automáticamente y solo la ven las personas con acceso a este site.</p></div>
+   </details>
+   <div class="actions"><button class="primary" id="saveBtn" data-act="save">✓ Registrar evento</button><button class="secondary" data-act="reset">Limpiar</button></div>
+   <div id="message" role="status"></div>
+  </section>
+
+  <section class="panel hidden" id="leader">
+   <h1>¿Qué tengo que hacer?</h1><p class="muted">Abre un evento, mira el dibujo y marca cada etapa cuando esté terminada.</p>
+   <div class="bar"><button class="secondary" data-act="refresh">↻ Actualizar</button></div>
+   <div id="leaderList"></div>
+  </section>
+
+  <section class="panel hidden" id="agenda">
+   <h1>Agenda de eventos</h1>
+   <div class="bar"><select id="rango" aria-label="Rango"><option value="proximos">Próximos</option><option value="pasados">Pasados (30 días)</option><option value="todos">Todos</option></select>
+   <button class="secondary" data-act="refresh">↻ Actualizar</button></div>
+   <div id="agendaList"></div>
+  </section>
+ </div>
+</main>
+<footer>SBM · Gestión operativa de eventos</footer>
+
+<script>
+/* ====== CONFIGURACIÓN ======
+   La llave "publishable"/anon es pública por diseño: la seguridad real la dan las políticas RLS del SQL.
+   Cópiala de Supabase > Project Settings > API Keys. NUNCA pongas aquí la service_role. */
+const SUPABASE_URL='https://ihajshxnmakyobcubqlq.supabase.co';
+const SUPABASE_KEY='sb_publishable_c4A_lPxTe0FCm_KoChNIGQ_yMlt6lV5';
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const TOKEN=new URLSearchParams(location.search).get('k');   // enlace de cliente: ?k=codigo
+const CLIENTE=!!TOKEN;
+const configured=!SUPABASE_KEY.startsWith('PEGA')&&window.supabase;
+const db=configured?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,CLIENTE?{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}:undefined):null;
+
+const SPACES=['Sala','Auditorio','Comedor','Pantry','Cafetín','Cafetería','Azotea / Rooftop','Otro espacio'];
+const SPACE_ICON={Sala:'🪑',Auditorio:'🎤',Comedor:'🍽️',Pantry:'☕'};
+const LAYOUTS=['En U','Escuelita','Auditorio','Círculo','Rectángulo / Imperial','Mesas redondas','Stands','Gamer','Sin cambios','Otro'];
+const ROOM_LABEL={Sala:'Nombre de la sala',Auditorio:'Nombre del auditorio',Comedor:'Nombre del comedor',Pantry:'Nombre del pantry',Cafetín:'Nombre del cafetín',Cafetería:'Nombre de la cafetería','Azotea / Rooftop':'Nombre del área en la azotea','Otro espacio':'Nombre del lugar'};
+const PASOS=[['paso_preparado_en','1. Preparé la sala'],['paso_atendido_en','2. Atendí / verifiqué'],['paso_cierre_en','3. Dejé todo como estaba']];
+
+const state={ready:false,user:null,perfil:null,sitios:[],sitio:null,eventos:[],salas:[],space:'Sala',layout:'En U',saving:false};
+const canWork=()=>state.perfil&&['admin','supervisor'].includes(state.perfil.rol);
+
+/* ---------- utilidades ---------- */
+function todayStr(){const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function addDays(s,n){const d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10)}
+const hhmm=t=>String(t||'').slice(0,5);
+function fmtDate(s){try{return new Date(s+'T12:00:00').toLocaleDateString('es-CR',{weekday:'short',day:'numeric',month:'short'})}catch{return s}}
+function fmtTime(ts){try{return new Date(ts).toLocaleTimeString('es-CR',{hour:'2-digit',minute:'2-digit'})}catch{return ''}}
+function note(id,text,kind){const el=$(id);el.innerHTML=text?`<div class="notice ${kind||''}">${esc(text)}</div>`:''}
+function errText(e){const m=(e&&e.message)||String(e);if(/row-level security|permission denied/i.test(m))return 'No tienes permiso para esta acción en este site.';if(/enlace_invalido/.test(m))return 'Este enlace ya no es válido. Pide uno nuevo a SBM.';if(/limite_por_hora/.test(m))return 'Se alcanzó el límite de registros por hora. Intenta más tarde.';if(/fecha_pasada/.test(m))return 'La fecha ya pasó.';if(/no_cancelable/.test(m))return 'Este evento ya no se puede cancelar porque SBM ya empezó a prepararlo.';if(/Failed to fetch|NetworkError/i.test(m))return 'Sin conexión. Revisa tu internet e intenta de nuevo.';return m}
+
+/* ---------- dibujos de acomodo (sin cambios) ---------- */
+function drawing(type){let shapes='';const rect=(x,y,w,h,fill='#b9cddd')=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="2" fill="${fill}"/>`;const chair=(x,y)=>rect(x,y,9,7,'#336e9c');
+if(type==='En U'){shapes+=rect(18,12,10,49)+rect(72,12,10,49)+rect(18,52,64,9);for(let i=0;i<4;i++){shapes+=chair(5,16+i*12)+chair(86,16+i*12)}for(let i=0;i<5;i++)shapes+=chair(24+i*11,64)}
+else if(type==='Escuelita'||type==='Auditorio'){for(let r=0;r<4;r++)for(let c=0;c<5;c++){if(type==='Escuelita'&&r%2===0)shapes+=rect(9+c*17,8+r*16,13,6);shapes+=chair(11+c*17,16+r*15)}}
+else if(type==='Círculo'||type==='Mesas redondas'){let n=type==='Círculo'?10:3;for(let k=0;k<n;k++){let a=2*Math.PI*k/n;shapes+=`<circle cx="${50+31*Math.cos(a)}" cy="${36+26*Math.sin(a)}" r="${type==='Círculo'?5:10}" fill="${type==='Círculo'?'#336e9c':'#b9cddd'}"/>`}}
+else if(type==='Rectángulo / Imperial'){shapes+=rect(22,20,56,32);for(let i=0;i<5;i++)shapes+=chair(24+i*11,10)+chair(24+i*11,55);shapes+=chair(9,31)+chair(82,31)}
+else if(type==='Stands'){for(let i=0;i<3;i++)shapes+=rect(10+i*30,10,22,15)+rect(10+i*30,48,22,15)}
+else if(type==='Gamer'){shapes+=rect(10,8,80,56);shapes+=`<circle cx="50" cy="36" r="12" fill="#336e9c"/>`;for(let i=0;i<3;i++)shapes+=chair(1,14+i*18)+chair(90,14+i*18)}
+else if(type==='Sin cambios'){shapes+=`<text x="50" y="43" font-size="33" text-anchor="middle" fill="#336e9c">✓</text>`}
+else{shapes+=`<text x="50" y="45" font-size="32" text-anchor="middle" fill="#336e9c">✎</text>`}
+return `<svg viewBox="0 0 100 78" role="img" aria-label="Esquema ${esc(type)}"><rect x="1" y="1" width="98" height="76" rx="8" fill="#f0f5fa"/>${shapes}</svg>`}
+
+/* ---------- sesión ---------- */
+function showLogin(){$('login').classList.remove('hidden');$('app').classList.add('hidden');$('userbar').classList.add('hidden')}
+async function init(){
+ if(CLIENTE)return initCliente();
+ if(!configured){showLogin();note('loginMsg','Falta configurar la llave de Supabase (SUPABASE_KEY) en el archivo.','err');return}
+ db.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'){state.user=null;showLogin()}});
+ const {data:{session}}=await db.auth.getSession();
+ if(session)await startSession(session.user);else showLogin();
 }
-function pickLayout(i){layout=names[i];drawChoices()};function getEvents(){try{return JSON.parse(localStorage.getItem('sbm_events_demo')||'[]')}catch{return []}}function setEvents(a){localStorage.setItem('sbm_events_demo',JSON.stringify(a))}function resetForm(){['name','room','people','notes','photo'].forEach(id=>$(id).value='');space='Sala';layout='En U';$('message').textContent='';drawChoices();updateRoomLabel()};function saveEvent(){let name=$('name').value.trim(),date=$('date').value,start=$('start').value,end=$('end').value;if(!name||!date||!start||!end||!getRoomName()){ $('message').textContent='⚠️ Completa nombre, fecha, horas y nombre del espacio.';return}if(end<=start){$('message').textContent='⚠️ La hora final debe ser posterior a la inicial.';return}const e={id:Date.now(),project:$('demoProject').value,name,date,start,end,people:$('people').value,space,floor:$('floor').value,room:getRoomName(),layout,notes:$('notes').value.trim(),photo:'',done:[false,false,false]};const f=$('photo').files[0];const finish=()=>{let a=getEvents();a.push(e);try{setEvents(a)}catch{e.photo='';setEvents([...getEvents(),e]);alert('La foto es demasiado grande para guardar en esta prueba; el evento se guardó sin foto.')}resetForm();view('leader')};if(f){const reader=new FileReader();reader.onload=()=>{e.photo=String(reader.result);finish()};reader.readAsDataURL(f)}else finish()}
-function view(v){['register','leader','agenda'].forEach(k=>{$(k).classList.toggle('hidden',k!==v);$('tab-'+k).classList.toggle('active',k===v)});if(v==='leader')renderLeader();if(v==='agenda')renderAgenda();window.scrollTo({top:0,behavior:'smooth'})}function sortEvents(a){return a.sort((x,y)=>(x.date+x.start).localeCompare(y.date+y.start))}function eventCard(e,leader){let done=e.done||[false,false,false];return `<article class="event"><h3>${esc(e.name)}</h3><div class="muted">📅 ${esc(e.date)} · ${esc(e.start)}–${esc(e.end)} · ${esc(e.project)}</div><p><strong>${esc(e.space)}: ${esc(e.room)} · Piso ${esc(e.floor||'sin especificar')}</strong><br>${esc(e.people||'—')} personas · <strong>${esc(e.layout)}</strong></p><div style="max-width:240px">${drawing(e.layout)}</div>${e.notes?`<p>📝 ${esc(e.notes)}</p>`:''}${e.photo?`<details><summary>📷 Ver foto de instrucciones</summary><img alt="Instrucciones adjuntas" src="${e.photo}" style="max-width:100%;max-height:300px;border-radius:10px"></details>`:''}${leader?`<p><strong>Marca lo que ya hiciste:</strong></p><div class="steps">${['1. Preparé la sala','2. Atendí / verifiqué','3. Dejé todo como estaba'].map((s,i)=>`<button class="${done[i]?'done':''}" onclick="toggleStep(${e.id},${i})">${done[i]?'✓ ':''}${s}</button>`).join('')}</div><span class="pill">${done.every(Boolean)?'✓ Finalizado':done[0]?'En proceso':'Pendiente'}</span>`:`<span class="pill">${done.every(Boolean)?'Finalizado':'Pendiente / en proceso'}</span> <button class="secondary" onclick="deleteEvent(${e.id})">Eliminar prueba</button>`}</article>`}function renderLeader(){let a=sortEvents(getEvents()).filter(e=>e.project===$('demoProject').value);$('leaderList').innerHTML=a.length?a.map(e=>eventCard(e,true)).join(''):'<div class="empty">Todavía no hay eventos. Registra uno para probar.</div>'}function renderAgenda(){let a=sortEvents(getEvents()).filter(e=>e.project===$('demoProject').value);$('agendaList').innerHTML=a.length?a.map(e=>eventCard(e,false)).join(''):'<div class="empty">No hay eventos registrados.</div>'}function toggleStep(id,i){let a=getEvents(),e=a.find(e=>e.id===id);if(e){e.done[i]=!e.done[i];setEvents(a);renderLeader()}}function deleteEvent(id){if(confirm('¿Eliminar este evento de prueba?')){setEvents(getEvents().filter(e=>e.id!==id));renderAgenda()}}function clearDemo(){if(confirm('¿Borrar todos los eventos de esta prueba?')){localStorage.removeItem('sbm_events_demo');renderAgenda()}}$('date').value=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);drawChoices();updateRoomLabel();
+async function initCliente(){
+ if(!configured){showLogin();note('loginMsg','Falta configurar la llave de Supabase (SUPABASE_KEY) en el archivo.','err');return}
+ const {data,error}=await db.rpc('evt_cliente_info',{p_token:TOKEN});
+ if(error||!data){$('login').innerHTML='<h1>Enlace no válido</h1><p class="muted">Este enlace no existe o fue desactivado. Pide uno nuevo a SBM.</p>';return}
+ state.sitio=data;state.sitios=[data];state.perfil=null;
+ $('whoami').textContent='Acceso de cliente';$('siteSel').classList.add('hidden');$('logoutBtn').classList.add('hidden');
+ $('tab-leader').classList.add('hidden');$('reqWrap').classList.remove('hidden');$('photoWrap').classList.add('hidden');
+ $('login').classList.add('hidden');$('app').classList.remove('hidden');$('userbar').classList.remove('hidden');
+ state.ready=true;resetForm();await loadEvents();view('register');
+}
+async function startSession(user){
+ const {data:perfil,error}=await db.from('evt_perfiles').select('nombre,rol,activo').eq('user_id',user.id).maybeSingle();
+ if(error||!perfil||!perfil.activo){await db.auth.signOut();note('loginMsg',error?errText(error):'Tu usuario no tiene acceso a esta aplicación. Pide a administración que lo active.','err');return}
+ const {data:sitios,error:e2}=await db.from('evt_sitios').select('id,nombre,pisos,espacios').eq('activo',true).order('nombre');
+ if(e2||!sitios||!sitios.length){await db.auth.signOut();note('loginMsg',e2?errText(e2):'Tu usuario no tiene ningún site asignado todavía.','err');return}
+ state.user=user;state.perfil=perfil;state.sitios=sitios;state.ready=true;
+ let last=null;try{last=localStorage.getItem('evt_sitio')}catch{}
+ state.sitio=sitios.find(s=>s.id===last)||sitios[0];
+ $('whoami').textContent=`${perfil.nombre} · ${perfil.rol}`;
+ $('siteSel').innerHTML=sitios.map(s=>`<option value="${esc(s.id)}">${esc(s.nombre)}</option>`).join('');
+ $('siteSel').value=state.sitio.id;$('siteSel').classList.toggle('hidden',sitios.length<2);
+ $('tab-leader').classList.toggle('hidden',!canWork());
+ $('login').classList.add('hidden');$('app').classList.remove('hidden');$('userbar').classList.remove('hidden');note('loginMsg','');
+ resetForm();await loadAll();view(canWork()?'leader':'register');
+}
+async function doLogin(e){
+ e.preventDefault();if(!configured)return;const b=$('loginBtn');b.disabled=true;note('loginMsg','');
+ const {data,error}=await db.auth.signInWithPassword({email:$('email').value.trim(),password:$('pass').value});
+ b.disabled=false;
+ if(error){note('loginMsg',/Invalid login/i.test(error.message)?'Correo o contraseña incorrectos.':errText(error),'err');return}
+ $('pass').value='';await startSession(data.user);
+}
+async function logout(){await db.auth.signOut()}
+function changeSite(){state.sitio=state.sitios.find(s=>s.id===$('siteSel').value)||state.sitio;try{localStorage.setItem('evt_sitio',state.sitio.id)}catch{}resetForm();loadAll().then(()=>view(currentView()))}
+
+/* ---------- datos ---------- */
+async function loadAll(){await Promise.all([loadEvents(),loadSalas()])}
+async function loadEvents(){
+ if(CLIENTE){
+  const {data,error}=await db.rpc('evt_cliente_eventos',{p_token:TOKEN});
+  if(error){note('message',errText(error),'err');state.eventos=[]}else state.eventos=data||[];
+  renderLeader();renderAgenda();return;
+ }
+ const hoy=todayStr();
+ const {data,error}=await db.from('evt_eventos').select('*').eq('sitio_id',state.sitio.id)
+  .gte('fecha',addDays(hoy,-30)).lte('fecha',addDays(hoy,120)).order('fecha').order('hora_inicio').limit(500);
+ if(error){note('message',errText(error),'err');state.eventos=[]}else state.eventos=data;
+ renderLeader();renderAgenda();
+}
+async function loadSalas(){
+ if(CLIENTE)return;
+ const {data}=await db.from('evt_eventos').select('sala').eq('sitio_id',state.sitio.id).order('creado_en',{ascending:false}).limit(300);
+ const seen=new Map();(data||[]).forEach(r=>{const k=r.sala.trim().toLowerCase();if(!seen.has(k))seen.set(k,r.sala.trim())});
+ state.salas=[...seen.values()].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
+ $('salasList').innerHTML=state.salas.map(s=>`<option value="${esc(s)}"></option>`).join('');
+}
+
+/* ---------- formulario ---------- */
+function drawChoices(){
+ $('spaces').innerHTML=SPACES.map(s=>`<button type="button" class="choice ${s===state.space?'selected':''}" data-act="space" data-v="${esc(s)}">${SPACE_ICON[s]||'📍'}<strong>${esc(s)}</strong></button>`).join('');
+ $('layouts').innerHTML=LAYOUTS.map(n=>`<button type="button" class="choice ${n===state.layout?'selected':''}" data-act="layout" data-v="${esc(n)}">${drawing(n)}<strong>${esc(n)}</strong></button>`).join('');
+}
+function floorOptions(){const s=state.sitio,e=(s.espacios||{})[state.space];return e&&e.length?e:(s.pisos||[])}
+function updatePlace(){
+ const s=state.sitio,f=$('floor'),old=f.value,fs=floorOptions();
+ f.innerHTML='<option value="">Seleccionar piso</option>'+fs.map(x=>`<option value="${x}">Piso ${x}</option>`).join('')+'<option value="otro">Otro / por confirmar</option>';
+ f.value=fs.map(String).includes(old)||old==='otro'?old:'';
+ const parts=Object.entries(s.espacios||{}).map(([k,v])=>`${k}: ${v.length>1?'pisos':'piso'} ${v.join(', ')}`);
+ $('floorHelp').textContent=parts.length?parts.join(' · '):((s.pisos||[]).length?'Selecciona el piso correspondiente.':'Espacios específicos pendientes de confirmar para este site.');
+ const label=ROOM_LABEL[state.space];$('roomLabel').textContent=label;$('room').placeholder='Ej. '+label+' 1';
+ $('siteName').textContent=s.nombre;
+}
+function pickSpace(v){state.space=v;drawChoices();updatePlace()}
+function pickLayout(v){state.layout=v;drawChoices()}
+function resetForm(){
+ ['name','room','people','notes','photo','requester'].forEach(id=>$(id).value='');
+ $('date').value=todayStr();$('start').value='09:00';$('end').value='11:00';
+ state.space='Sala';state.layout='En U';note('message','');drawChoices();updatePlace();
+}
+async function compress(file){
+ const bmp=await createImageBitmap(file);const k=Math.min(1,1280/Math.max(bmp.width,bmp.height));
+ const c=document.createElement('canvas');c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);
+ c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+ return new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error('No se pudo procesar la imagen')),'image/jpeg',.8));
+}
+async function saveEvent(){
+ if(state.saving)return;
+ const name=$('name').value.trim(),date=$('date').value,start=$('start').value,end=$('end').value,sala=$('room').value.trim(),
+  floor=$('floor').value,pplRaw=$('people').value.trim(),people=pplRaw?parseInt(pplRaw,10):null;
+ if(!name||!date||!start||!end||!sala)return note('message','⚠️ Completa nombre, fecha, horas y nombre del espacio.','err');
+ if(CLIENTE&&!$('requester').value.trim())return note('message','⚠️ Escribe tu nombre y contacto.','err');
+ if(floorOptions().length&&!floor)return note('message','⚠️ Selecciona el piso (o “Otro / por confirmar”).','err');
+ if(end<=start)return note('message','⚠️ La hora final debe ser posterior a la inicial.','err');
+ if(people!==null&&(!Number.isInteger(people)||people<1||people>5000))return note('message','⚠️ El número de personas no es válido.','err');
+ if(date<todayStr()&&!confirm('La fecha ya pasó. ¿Registrar el evento de todos modos?'))return;
+ state.saving=true;$('saveBtn').disabled=true;note('message','Guardando…');
+ let path=null;
+ try{
+  // aviso de choque con otro evento en el mismo espacio (sobre los eventos ya cargados)
+  const norm=s=>String(s||'').trim().toLowerCase();
+  const choque=state.eventos.filter(x=>x.fecha===date&&norm(x.sala)===norm(sala)&&(!floor||!x.piso||x.piso===floor)&&hhmm(x.hora_inicio)<end&&hhmm(x.hora_fin)>start).slice(0,3);
+  if(choque.length&&!confirm('⚠️ Ya hay un evento en ese espacio a esa hora:\n'+choque.map(c=>`• ${c.nombre} (${hhmm(c.hora_inicio)}–${hhmm(c.hora_fin)})`).join('\n')+'\n\n¿Registrar de todos modos?')){
+   state.saving=false;$('saveBtn').disabled=false;note('message','');return}
+  const id=crypto.randomUUID();
+  const f=$('photo').files[0];
+  if(f){
+   if(!/^image\//.test(f.type))throw new Error('El archivo debe ser una imagen.');
+   const blob=await compress(f);path=`${state.sitio.id}/${id}.jpg`;
+   const {error:ue}=await db.storage.from('evt-fotos').upload(path,blob,{contentType:'image/jpeg'});
+   if(ue){path=null;throw ue}
+  }
+  const row={id,sitio_id:state.sitio.id,nombre:name,fecha:date,hora_inicio:start,hora_fin:end,personas:people,tipo_espacio:state.space,
+   piso:floor||null,sala,acomodo:state.layout,notas:$('notes').value.trim()||null,foto_path:path};
+  let error;
+  if(CLIENTE)({error}=await db.rpc('evt_cliente_crear',{p_token:TOKEN,p_nombre:name,p_fecha:date,p_inicio:start,p_fin:end,p_personas:people,p_tipo:state.space,p_piso:floor||null,p_sala:sala,p_acomodo:state.layout,p_notas:$('notes').value.trim()||null,p_solicitante:$('requester').value.trim()}));
+  else({error}=await db.from('evt_eventos').insert(row));
+  if(error){if(path)await db.storage.from('evt-fotos').remove([path]);throw error}
+  resetForm();await loadAll();view(canWork()?'leader':'agenda');
+ }catch(e){note('message','❌ '+errText(e),'err')}
+ finally{state.saving=false;$('saveBtn').disabled=false}
+}
+
+/* ---------- vistas ---------- */
+let _view='register';const currentView=()=>_view;
+function view(v){
+ if(v==='leader'&&!canWork())v='agenda';_view=v;
+ ['register','leader','agenda'].forEach(k=>{$(k).classList.toggle('hidden',k!==v);$('tab-'+k).classList.toggle('active',k===v)});
+ if(v==='leader')renderLeader();if(v==='agenda')renderAgenda();window.scrollTo({top:0,behavior:'smooth'});
+}
+function estado(e){return e.estado||e.paso_cierre_en?'Finalizado':(e.paso_preparado_en||e.paso_atendido_en)?'En proceso':'Pendiente'}
+function canDelete(e){if(CLIENTE)return !!e.cancelable;return canWork()||(state.perfil.rol==='cliente'&&e.creado_por===state.user.id&&!e.paso_preparado_en)}
+function eventCard(e,leader){
+ const est=estado(e),cls=est==='Finalizado'?'ok':est==='Pendiente'?'warn':'';
+ const steps=leader&&canWork()?`<p><strong>Marca lo que ya hiciste:</strong></p><div class="steps">${PASOS.map(([col,txt],i)=>`<button class="${e[col]?'done':''}" data-act="paso" data-id="${esc(e.id)}" data-i="${i}">${e[col]?'✓ ':''}${esc(txt)}${e[col]?`<small>${esc(fmtTime(e[col]))}</small>`:''}</button>`).join('')}</div>`:'';
+ return `<article class="event"><h3>${esc(e.nombre)}</h3>
+ <div class="muted">📅 ${esc(fmtDate(e.fecha))} · ${esc(hhmm(e.hora_inicio))}–${esc(hhmm(e.hora_fin))}</div>
+ <p><strong>${esc(e.tipo_espacio)}: ${esc(e.sala)} · Piso ${esc(e.piso||'sin especificar')}</strong><br>${e.personas?esc(e.personas)+' personas':'— personas'} · <strong>${esc(e.acomodo)}</strong></p>
+ <div style="max-width:240px">${drawing(e.acomodo)}</div>
+ ${e.notas?`<p>📝 ${esc(e.notas)}</p>`:''}
+ ${e.solicitante?`<p class="muted">👤 Solicitado por ${esc(e.solicitante)}</p>`:''}
+ ${e.foto_path?`<details data-foto="${esc(e.foto_path)}"><summary>📷 Ver foto de instrucciones</summary><div class="fotobox muted">Cargando…</div></details>`:''}
+ ${steps}
+ <span class="pill ${cls}">${est}</span>${canDelete(e)?` <button class="danger" data-act="del" data-id="${esc(e.id)}">${CLIENTE?'Cancelar evento':'Eliminar'}</button>`:''}</article>`;
+}
+function renderLeader(){
+ const el=$('leaderList');if(!state.sitio||!canWork()){el.innerHTML='';return}
+ const hoy=todayStr(),ev=state.eventos;
+ const deHoy=ev.filter(e=>e.fecha===hoy),atras=ev.filter(e=>e.fecha<hoy&&!e.paso_cierre_en),prox=ev.filter(e=>e.fecha>hoy);
+ let h=`<h2>Hoy · ${esc(fmtDate(hoy))}</h2>`+(deHoy.length?deHoy.map(e=>eventCard(e,true)).join(''):'<div class="empty">No hay eventos para hoy en este site.</div>');
+ if(atras.length)h+=`<h2>⚠️ Sin cerrar de días anteriores (${atras.length})</h2>`+atras.map(e=>eventCard(e,true)).join('');
+ if(prox.length)h+=`<details class="step"><summary>Próximos eventos (${prox.length})</summary>${prox.map(e=>eventCard(e,true)).join('')}</details>`;
+ el.innerHTML=h;
+}
+function renderAgenda(){
+ const el=$('agendaList');if(!state.sitio)return;const hoy=todayStr(),r=$('rango').value;
+ let a=state.eventos;if(r==='proximos')a=a.filter(e=>e.fecha>=hoy);else if(r==='pasados')a=a.filter(e=>e.fecha<hoy).reverse();
+ el.innerHTML=a.length?a.map(e=>eventCard(e,false)).join(''):'<div class="empty">No hay eventos en este rango.</div>';
+}
+async function togglePaso(id,i){
+ const e=state.eventos.find(x=>x.id===id);if(!e)return;const col=PASOS[i][0],val=e[col]?null:new Date().toISOString();
+ const {data,error}=await db.from('evt_eventos').update({[col]:val}).eq('id',id).select().single();
+ if(error){alert('No se pudo guardar: '+errText(error));return}
+ Object.assign(e,data);renderLeader();renderAgenda();
+}
+async function deleteEvent(id){
+ const e=state.eventos.find(x=>x.id===id);if(!e||!confirm(`¿${CLIENTE?'Cancelar':'Eliminar'} el evento “${e.nombre}”?`))return;
+ if(CLIENTE){const {error}=await db.rpc('evt_cliente_cancelar',{p_token:TOKEN,p_id:id});if(error){alert('No se pudo cancelar: '+errText(error));return}await loadEvents();return}
+ const {error}=await db.from('evt_eventos').delete().eq('id',id);
+ if(error){alert('No se pudo eliminar: '+errText(error));return}
+ if(e.foto_path)await db.storage.from('evt-fotos').remove([e.foto_path]);
+ state.eventos=state.eventos.filter(x=>x.id!==id);renderLeader();renderAgenda();
+}
+async function showFoto(det){
+ const box=det.querySelector('.fotobox');if(!box||box.dataset.ok)return;
+ const {data,error}=await db.storage.from('evt-fotos').createSignedUrl(det.dataset.foto,300);
+ if(error||!data){box.textContent='No se pudo cargar la foto.';return}
+ box.dataset.ok='1';box.innerHTML=`<img alt="Instrucciones adjuntas" src="${esc(data.signedUrl)}" style="max-width:100%;max-height:300px;border-radius:10px">`;
+}
+
+/* ---------- eventos de la interfaz ---------- */
+document.addEventListener('click',e=>{
+ const t=e.target.closest('[data-act]');if(!t)return;const d=t.dataset;
+ switch(d.act){
+  case'view':view(d.v);break;case'space':pickSpace(d.v);break;case'layout':pickLayout(d.v);break;
+  case'save':saveEvent();break;case'reset':resetForm();break;case'logout':logout();break;
+  case'paso':togglePaso(d.id,+d.i);break;case'del':deleteEvent(d.id);break;
+  case'refresh':loadAll();break;
+ }
+});
+document.addEventListener('toggle',e=>{if(e.target.dataset&&e.target.dataset.foto&&e.target.open)showFoto(e.target)},true);
+$('loginForm').addEventListener('submit',doLogin);
+$('siteSel').addEventListener('change',changeSite);
+$('rango').addEventListener('change',renderAgenda);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&state.ready)loadEvents()});
+init();
 </script></body></html>
